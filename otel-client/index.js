@@ -33,14 +33,15 @@ class OpenTelemetrySDK {
         `Invalid output type - Options: console, dev, production | Got: ${outputType}`
       );
     }
-    const urls = {
-      dev: 'http://localhost:4318/v1/traces', // DEV_URL
-      prod: 'NOT_YET_IMPLEMENTED'
-    };
 
     // --------------------------------------------------------------------
     // Metrics Setup
     const metricExporters = () => {
+      const urls = {
+        dev: 'http://localhost:4317/v1/metrics', // DEV_URL
+        prod: 'NOT_YET_IMPLEMENTED'
+      };
+
       switch(outputType) {
         case 'dev':
           return new OTLPMetricExporter({
@@ -66,6 +67,11 @@ class OpenTelemetrySDK {
     // --------------------------------------------------------------------
     // Traces Setup (Default NodeJS Traces Enabled)
     const traceExporters = () => {
+      const urls = {
+        dev: 'http://localhost:4318/v1/traces', // DEV_URL
+        prod: 'NOT_YET_IMPLEMENTED'
+      };
+
       console.log(outputType)
       switch(outputType) {
         case 'dev':
