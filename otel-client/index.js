@@ -1,6 +1,7 @@
 // --------------------------------------------------------------------
 // Setup for OpenTelemetry Tracing
-require('dotenv').config()
+require('dotenv').config();
+const { DiagConsoleLogger, DiagLogLevel, diag, metrics } = require('@opentelemetry/api');
 const opentelemetry = require('@opentelemetry/sdk-node');
 const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-base');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
@@ -9,60 +10,36 @@ const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumenta
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-
-// --------------------------------------------------------------------
-// Setup for OpenTelemetry Metrics
-const { MeterProvider, ConsoleMetricExporter } = require('@opentelemetry/sdk-metrics-base');
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
+const { MeterProvider, PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
 
 // --------------------------------------------------------------------
 // SDK Class
 class OpenTelemetrySDK {
   constructor() {
     this.counters = {};
+    this.serviceName = '';
     this.sdk = {};
+    this.env = '';
+    this.interval = {};
   }
+
   // NOTE: NodeJS Auto Instrumentation for tracing currently always enabled
   // serviceName: name of the service
   // outputType: `console` for debug/dev, `dev`, `production`
-  async initialize(serviceName, outputType, optInterval) {
-    
+  initialize(serviceName, outputType, optInterval) {
+    this.serviceName = serviceName;
+    this.env = outputType;
+    // For troubleshooting, set the log level to DiagLogLevel.DEBUG
+    diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
+
+
     const validTraceTypes = ['console', 'dev', 'production'];
     if (validTraceTypes.indexOf(outputType) === -1) {
       throw new Error(
         `Invalid output type - Options: console, dev, production | Got: ${outputType}`
       );
     }
-
-    // --------------------------------------------------------------------
-    // Metrics Setup
-    const metricExporters = () => {
-      const urls = {
-        dev: 'http://localhost:4317/v1/metrics', // DEV_URL
-        prod: 'NOT_YET_IMPLEMENTED'
-      };
-
-      switch(outputType) {
-        case 'dev':
-          return new OTLPMetricExporter({
-            url: urls['dev']
-          });
-          break;
-        case 'production':
-          return new OTLPMetricExporter({
-            url: urls['prod']
-          });
-          break;
-        case 'console':
-        default:
-          return new ConsoleMetricExporter();
-      }
-    };
-
-    this.meter = new MeterProvider({
-      exporter: metricExporters(), 
-      interval: optInterval || 10000,
-    }).getMeter(`${serviceName}-meter`);
 
     // --------------------------------------------------------------------
     // Traces Setup (Default NodeJS Traces Enabled)
@@ -99,16 +76,44 @@ class OpenTelemetrySDK {
     this.sdk = sdk;
   };
 
-  createCounter(counterName) {
-    this.counters[counterName] = this.meter.createCounter(counterName);
-  }
-
   stopTracing() {
     opentelemetry.trace.getTracer('your_tracer_name').getActiveSpanProcessor().shutdown()
   }
 
+  startMetrics() {
+    console.log('STARTING METRICS' + '\n' + this.serviceName);
+  
+    const meterProvider = new MeterProvider();
+    metrics.setGlobalMeterProvider(meterProvider);
+  
+    meterProvider.addMetricReader(new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter(),
+      exportIntervalMillis: 1000
+    }));
+  
+    this.meter = meterProvider.getMeter(`${this.serviceName}-collector`)
+  
+    const requestCounter = this.meter.createCounter('fett_test', {
+      description: 'Example of a Counter',
+    });
+  
+    const upDownCounter = this.meter.createUpDownCounter('mando_test', {
+      description: 'Example of a UpDownCounter',
+    });
+  
+    const attributes = { environment: this.env };
+  
+    this.interval = setInterval(() => {
+      requestCounter.add(1, attributes);
+      upDownCounter.add(Math.random() > 0.5 ? 1 : -1, attributes);
+    }, 1000);
+  
+  }
+
   async startTracing() {
-    return this.sdk.start();
+    let mod = this;
+    this.startMetrics();
+    return this.sdk.start()
   }
 }
 

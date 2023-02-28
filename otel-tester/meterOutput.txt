@@ -1,0 +1,15 @@
+<ref *1> Meter {
+  _meterSharedState: MeterSharedState {
+    _meterProviderSharedState: MeterProviderSharedState {
+      resource: [Resource],
+      viewRegistry: [ViewRegistry],
+      metricCollectors: [],
+      meterSharedStates: [Map]
+    },
+    _instrumentationScope: { name: 'serviceName-meter', version: '', schemaUrl: undefined },
+    _metricStorageRegistry: MetricStorageRegistry { _metricStorageRegistry: [Map] },
+    observableRegistry: ObservableRegistry { _callbacks: [], _batchCallbacks: [] },
+    meter: [Circular *1]
+  }
+}
+
