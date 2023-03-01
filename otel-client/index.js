@@ -31,7 +31,7 @@ class OpenTelemetrySDK {
     this.serviceName = serviceName;
     this.env = outputType;
     // For troubleshooting, set the log level to DiagLogLevel.DEBUG
-    diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
+    // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 
     const validTraceTypes = ['console', 'dev', 'production'];
