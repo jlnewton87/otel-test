@@ -37,13 +37,13 @@ myCounter.Add(1, { comment: 'add tags/metadata here' });
 
 ```js
 const oTelSDK = require('otel-client');
-oTelSDK.initialize('SERVICE_NAME_HERE', 'console'); // `console` here makes traces/metrics report to console, change to `staging` before deploying
+oTelSDK.initialize('SERVICE_NAME_HERE', 'dev'); // `console` here makes traces/metrics report to console, change to `staging` before deploying
+// ONLY DEV CURRENTLY WORKS
 oTelSDK.startTracing()
   .then({
     const express = require('express'); // MUST require express and/or http after startTracing has completed!
     const app = express();
-    oTelSDK.createCounter('my_counter'); // creates counter named `my_counter`
-    let myCounter = oTelSDK.counters.my_counter;
+    let myCounter = oTelSDK.meter.createCounter('my_counter'); // creates counter named `my_counter`
     let { my_counter: myCounter } = oTelSDK.counters;
 
     app.get('/status', (req, res) => {
