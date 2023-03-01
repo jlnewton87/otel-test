@@ -76,6 +76,8 @@ class OpenTelemetrySDK {
     this.sdk = sdk;
   };
 
+  // found some good examples of other instrument types here: 
+  // https://nodesource.com/blog/instrument-nodejs-applications-with-open-source-OTel-Tools-2
   startMetrics() {
     console.log('STARTING METRICS' + '\n' + this.serviceName);
   
