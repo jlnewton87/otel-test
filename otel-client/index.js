@@ -76,10 +76,6 @@ class OpenTelemetrySDK {
     this.sdk = sdk;
   };
 
-  stopTracing() {
-    opentelemetry.trace.getTracer('your_tracer_name').getActiveSpanProcessor().shutdown()
-  }
-
   startMetrics() {
     console.log('STARTING METRICS' + '\n' + this.serviceName);
   
@@ -88,26 +84,22 @@ class OpenTelemetrySDK {
   
     meterProvider.addMetricReader(new PeriodicExportingMetricReader({
       exporter: new OTLPMetricExporter(),
+      resource: new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: this.serviceName,
+      }),
       exportIntervalMillis: 1000
     }));
   
     this.meter = meterProvider.getMeter(`${this.serviceName}-collector`)
-  
-    const requestCounter = this.meter.createCounter('fett_test', {
-      description: 'Example of a Counter',
-    });
-  
-    const upDownCounter = this.meter.createUpDownCounter('mando_test', {
-      description: 'Example of a UpDownCounter',
-    });
-  
-    const attributes = { environment: this.env };
-  
-    this.interval = setInterval(() => {
-      requestCounter.add(1, attributes);
-      upDownCounter.add(Math.random() > 0.5 ? 1 : -1, attributes);
-    }, 1000);
-  
+    this.createAutoHistogram = (name, optConfig) => {
+      let output = this.meter.createHistogram(name, optConfig);
+      return {
+        record: (start) => {
+          start = start || new Date();
+          return output.record(new Date() - start)
+        }
+      }
+    }
   }
 
   async startTracing() {

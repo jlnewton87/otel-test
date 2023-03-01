@@ -15,6 +15,19 @@ metricsSDK.startTracing()
       // console.log(JSON.stringify(statusCounter));
       res.json({ status: 'OK' });
     });
+
+    let histogram = metricsSDK.createAutoHistogram('some_time', { 
+      unit: 'milliseconds', 
+      description: 'measures the duration of 5 second function :)'
+    });
+    app.get('/histo', (req, res) => {
+      let start = new Date();
+      setTimeout(() => {
+        console.log(`Recording diff of: ${new Date() - start} (ish)`);
+        histogram.record(start);
+        res.json({msg: '5 seconds passed'})
+      }, 5000)
+    })
   
     app.get('/testcounter', (req, res) => {
       // let { testcounter1: testCounter } = metricsSDK.counters;
